@@ -157,6 +157,44 @@ Does your answer:
 :::
 
 ```{r}
+qgpd <- function(p, xi, sigma, u){
+
+  # Check for valid scale parameter.
+  if (any(sigma <= 0)) {
+    stop("The scale parameter 'sigma' must be positive.")
+  }
+  
+  # "valid" version of p by setting any values outside the
+  # valid [0, 1] range to NA. This effectively flags them as invalid
+  # before any calculations are performed.
+  p_valid <- ifelse(p < 0 | p > 1, NA, p)
+  
+  # the two cases for the shape parameter `xi`.
+  # `ifelse` will test `xi == 0` for each element and pick the appropriate formula.
+  q <- ifelse(
+    xi == 0,
+    # Formula for xi = 0 
+    u - sigma * log(1 - p_valid),
+    # Formula for xi != 0 
+    u - (sigma / xi) * (1 - (1 - p_valid)**(-xi) )
+  )
+  
+  return(q)
+}
+
+# Calculate quantiles for X ~ GPD(u=1.5, sigma=2, xi=-0.4)
+# Quantile for p = 0.5
+quantile_p05 <- qgpd(p = 0.5, u = 1.5, sigma = 2, xi = -0.4)
+print(paste("The quantile for p = 0.50 is:", quantile_p05))
+
+# Quantile for p = 0.75
+quantile_p75 <- qgpd(p = 0.75, u = 1.5, sigma = 2, xi = -0.4)
+print(paste("The quantile for p = 0.75 is:", quantile_p75))
+
+# Quantile for p = 0.99
+quantile_p99 <- qgpd(p = 0.99, u = 1.5, sigma = 2, xi = -0.4)
+print(paste("The quantile for p = 0.99 is:", quantile_p99))
+
 ```
 
 ### Question 3
