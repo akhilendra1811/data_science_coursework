@@ -111,7 +111,7 @@ $$
  x&= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u \\
  F^{-1}_X(y) &= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u
  \end{aligned}
-$$
+$${#eq-gpd-inverse-cdf-case-1}
 **Case 2)** when $\xi = 0$, we get the following from @eq-gpd-cdf
 
 $$
@@ -122,8 +122,9 @@ ln(1-y) &= -\dfrac{x-u}{\sigma}\\
 -(x-u) &= \sigma ln(1-y)\\
 F^{-1}_X(y) &= -\sigma ln(1-y) + u
 \end{aligned}
-$$
-Hence, our well defined $F^{-1}_X: [0,1] \rightarrow [u, x^+]$ of $X \sim \text{GPD}(u, \sigma, \xi) is as follows:
+$${#eq-gpd-inverse-cdf-case-2}
+
+Hence, combining @eq-gpd-inverse-cdf-case-1 and @eq-gpd-inverse-cdf-case-2 our well defined $F^{-1}_X: [0,1] \rightarrow [u, x^+]$ of $X \sim \text{GPD}(u, \sigma, \xi)$ is as follows: 
 
 $$
 F^{-1}_X(y;\,\sigma,\xi, u) = 
@@ -157,6 +158,17 @@ Does your answer:
 :::
 
 ```{r}
+#' Title
+#'
+#' @param p 
+#' @param xi 
+#' @param sigma 
+#' @param u 
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 qgpd <- function(p, xi, sigma, u){
 
   # Check for valid scale parameter.
@@ -164,19 +176,24 @@ qgpd <- function(p, xi, sigma, u){
     stop("The scale parameter 'sigma' must be positive.")
   }
   
-  # "valid" version of p by setting any values outside the
-  # valid [0, 1] range to NA. This effectively flags them as invalid
-  # before any calculations are performed.
-  p_valid <- ifelse(p < 0 | p > 1, NA, p)
+  if (any(p <= 0)) {
+    stop("The scale parameter 'sigma' must be positive.")
+  }
+  
+   # Add validation for the probability 'p'
+  if (any(p < 0 | p > 1)) {
+    stop("Probabilities 'p' must be between 0 and 1 (inclusive).")
+  }
+
   
   # the two cases for the shape parameter `xi`.
   # `ifelse` will test `xi == 0` for each element and pick the appropriate formula.
   q <- ifelse(
     xi == 0,
     # Formula for xi = 0 
-    u - sigma * log(1 - p_valid),
+    u - sigma * log(1 - p),
     # Formula for xi != 0 
-    u - (sigma / xi) * (1 - (1 - p_valid)**(-xi) )
+    u - (sigma / xi) * (1 - (1 - p)**(-xi) )
   )
   
   return(q)
@@ -185,15 +202,18 @@ qgpd <- function(p, xi, sigma, u){
 # Calculate quantiles for X ~ GPD(u=1.5, sigma=2, xi=-0.4)
 # Quantile for p = 0.5
 quantile_p05 <- qgpd(p = 0.5, u = 1.5, sigma = 2, xi = -0.4)
-print(paste("The quantile for p = 0.50 is:", quantile_p05))
 
 # Quantile for p = 0.75
 quantile_p75 <- qgpd(p = 0.75, u = 1.5, sigma = 2, xi = -0.4)
-print(paste("The quantile for p = 0.75 is:", quantile_p75))
 
 # Quantile for p = 0.99
 quantile_p99 <- qgpd(p = 0.99, u = 1.5, sigma = 2, xi = -0.4)
-print(paste("The quantile for p = 0.99 is:", quantile_p99))
+
+cat(
+  "The quantile for p = 0.50 is:", quantile_p05, "\n",
+  "The quantile for p = 0.75 is:", quantile_p75, "\n",
+  "The quantile for p = 0.99 is:", quantile_p99, "\n"
+)
 
 ```
 
@@ -219,6 +239,65 @@ Does your solution contain:
 :::
 
 <!-- YOUR ANSWER GOES HERE --> 
+
+
+```{r}
+#| echo: false
+#| warning: false
+
+samples <- read.csv("gpd_samples.csv")
+params <- read.csv("gpd_parameters.csv")
+
+# Set up a 3x2 grid to display all plots in a single figure.
+par(mfrow = c(3, 2), mar = c(4, 4, 3, 2), oma = c(0, 0, 2, 0))
+
+# Get the unique set IDs to loop through.
+set_ids <- unique(params$id)
+
+# Loop through each dataset ID (a, b, c, d, e, f).
+for (current_id in set_ids) {
+# get the data for the current set_id
+  sample_data <- samples$value[samples$set_id == current_id]
+  sample_data <- sort(sample_data)
+#  get the stated parameters for the current set
+  stated_params <- params[params$id == current_id, ]
+  
+   n <- length(sample_data)
+   
+# create a set of evenly spaced probabilities for the theoretical distribution.
+theoretical_probs <- (1:n - 0.5) / n
+
+# initialize an empty vector to store the results.
+  theoretical_quantiles <- numeric(n)
+  
+# use qgpd function to find the corresponding theoretical quantiles.
+  for (i in 1:n) {
+    theoretical_quantiles[i] <- qgpd(
+      p = theoretical_probs[i], 
+      xi = stated_params$xi,
+      sigma = stated_params$sigma,
+      u = stated_params$u
+    )
+  }
+  
+  plot(
+    theoretical_quantiles,
+    sample_data,
+    main = paste0("Q-Q Plot for Set '", current_id, "' (n=", n, ")"),
+    xlab = "Theoretical Quantiles",
+    ylab = "Empirical (Sample) Quantiles",
+    pch = 19, # Use solid circles for points
+    col = "blue"
+  )
+  # Add the y=x reference line.
+  abline(0, 1, col = "red", lwd = 2)
+  grid()
+}
+
+# Add an overall title to the figure.
+mtext("Q-Q Plots for GPD Samples vs. Stated Parameters", outer = TRUE, cex = 1.5)
+
+```
 
 
 ### Question 4
