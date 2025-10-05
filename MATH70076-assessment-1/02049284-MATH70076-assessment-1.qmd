@@ -327,7 +327,7 @@ Does your answer contain:
 
 <!-- YOUR INVESTIGATION GOES HERE --> 
 
-To investigate Proposal 1 "the distribution of river flow values is constant over time", we will first create a time series plot to see the riverflow.
+**Proposal 1: ** To investigate Proposal 1 "the distribution of river flow values is constant over time", we will first create a time series plot to see the riverflow.
 
 ```{r}
 #| echo: false
@@ -429,6 +429,67 @@ boxplot(
   ylab = expression("Flow (m"^3*"/s)")
 )
 grid(nx = NA, ny = NULL)
+```
+
+
+
+**Proposal 2: **
+
+```{r}
+#| echo: false
+threshold <- 75
+proposal_2_data <- river_data[river_data$flow > threshold, ]
+```
+
+
+
+```{r}
+#| label: fig-gpd-qqplot
+#| echo: false
+#| warning: false
+#| fig-cap: "Q-Q plot of river flow exceedances vs. theoretical GPD"
+
+# Get the empirical quantiles by sorting the  data
+empirical_quantiles <- sort(proposal_2_data$flow)
+
+# Define the hydrologist's proposed parameters
+gpd_params <- list(sigma = 29.7, xi = 0.62, u = 0)
+
+# c. Generate the theoretical quantiles
+n <- length(empirical_quantiles)
+theoretical_probs <- (1:n - 0.5) / n
+# Initialize an empty vector to store the results
+theoretical_quantiles <- numeric(n) 
+for (i in 1:n) {
+  theoretical_quantiles[i] <- qgpd(
+    p = theoretical_probs[i],
+    xi = gpd_params$xi,
+    sigma = gpd_params$sigma,
+    u = gpd_params$u
+  )
+}
+
+# d. Create the plot.
+plot(
+  theoretical_quantiles,
+  empirical_quantiles,
+  main = expression(paste("Q-Q Plot for River Flow in excess of 75 cm"^3)),
+  xlab = "Theoretical GPD Quantiles",
+  ylab = "Empirical (Sample) Quantiles",
+  pch = 19,
+  col = "darkred"
+)
+abline(0, 1, col = "black", lwd = 2, lty = 2) # Add y=x reference line
+grid()
+
+```
+```{r}
+acf(
+  proposal_2_data$flow,
+  lag.max = 30,
+  main = "Autocorrelation of Extreme Flow Exceedances"
+)
+
 ```
 
 ::: {.callout-tip}
