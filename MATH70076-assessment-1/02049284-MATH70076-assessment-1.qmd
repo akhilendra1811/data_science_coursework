@@ -444,7 +444,7 @@ proposal_2_data <- river_data[river_data$flow > threshold, ]
 
 
 ```{r}
-#| label: fig-gpd-qqplot
+#| label: fig-gpd-qqplot-q4
 #| echo: false
 #| warning: false
 #| fig-cap: "Q-Q plot of river flow exceedances vs. theoretical GPD"
@@ -484,10 +484,13 @@ grid()
 
 ```
 ```{r}
+#| label: fig-acf-q4
+#| echo: false
+#| warning: false
+#| fig-cap: "Autocorrelation of Extreme Flow Exceedances"
 acf(
   proposal_2_data$flow,
-  lag.max = 30,
-  main = "Autocorrelation of Extreme Flow Exceedances"
+  lag.max = 30
 )
 
 ```
