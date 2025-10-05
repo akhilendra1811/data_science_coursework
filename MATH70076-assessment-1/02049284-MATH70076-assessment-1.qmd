@@ -327,7 +327,109 @@ Does your answer contain:
 
 <!-- YOUR INVESTIGATION GOES HERE --> 
 
+To investigate Proposal 1 "the distribution of river flow values is constant over time", we will first create a time series plot to see the riverflow.
 
+```{r}
+#| echo: false
+
+# Load the river flow data from the CSV file
+river_data <- read.csv("riverflow_2015_2024.csv")
+
+# Convert the 'date' column from text to R's Date format
+river_data$date <- as.Date(river_data$date)
+
+```
+
+```{r}
+#| label: fig-riverflow-ts
+#| echo: false
+#| warning: false
+#| fig-cap: "River flow from 2015 to 2024"
+
+# --- Time Series Plot ---
+plot(
+  river_data$date,
+  river_data$flow,
+  type = 'l', # 'l' for line plot
+  col = "dodgerblue",
+  main = "River Flow (2015-2024)",
+  xlab = "Year",
+  ylab = expression("Flow (m"^3*"/s)") 
+)
+grid()
+```
+However, in the csv file, we can see there are some extreme data, so first checking that the number of extreme values are almost equal per year so that we are not adding bias to our investigation.
+
+```{r}
+#| label: fig-yearly-extremes
+#| echo: false
+#| warning: false
+#| fig-cap: "Number of extreme flow events per year"
+
+#Filter for extreme events
+extreme_data <- river_data[river_data$is_extreme == "True", ]
+
+# Extract the year from the date
+extreme_data$year <- format(extreme_data$date, "%Y")
+
+# c. Count the number of extreme events per year
+yearly_counts <- table(extreme_data$year)
+
+# d. Create the bar plot
+barplot(
+  yearly_counts,
+  main = "Annual Count of Extreme Flow Events",
+  xlab = "Year",
+  ylab = "Number of Days with Extreme Flow",
+  col = "tomato"
+)
+grid(nx = NA, ny = NULL)
+```
+As we can see from @fig-yearly-extremes that the number of extremes is almost similar so we can only consider non-extreme data.
+
+
+```{r}
+#| label: fig-riverflow-non-extreme
+#| echo: false
+#| warning: false
+#| fig-cap: "Time series of non-extreme daily river flow "
+
+# Create a subset of the data containing only the non-extreme flows.
+non_extreme_data <- river_data[river_data$is_extreme == "False", ]
+
+# --- Time Series Plot of Non-Extreme Values ---
+plot(
+  non_extreme_data$date,
+  non_extreme_data$flow,
+  type = 'l', # 'l' for line plot
+  col = "seagreen",
+  main = "Non-Extreme River Flow (2015-2024)",
+  xlab = "Date",
+  ylab = expression("Flow (m"^3*"/s)")
+)
+grid()
+```
+
+@fig-riverflow-non-extreme clearly reveals a strong seasonal pattern. The data exhibits cyclical peaks and troughs that recur annually, which is characteristic of hydrological time series influenced by seasonal weather patterns. This directly contradicts the proposal that the distribution of river flow is constant over time. We will also look at boxplots by months to further our reasoning. 
+
+```{r}
+#| label: fig-monthly-boxplot
+#| echo: false
+#| warning: false
+#| fig-cap: "Distribution of daily river flow by month (2015-2024)"
+
+non_extreme_data$month <- factor(format(non_extreme_data$date, "%b"), levels = month.abb)
+
+boxplot(
+  flow ~ month,
+  data = non_extreme_data,
+  col = "skyblue",
+  main = "Monthly River Flow Distribution",
+  xlab = "Month",
+  ylab = expression("Flow (m"^3*"/s)")
+)
+grid(nx = NA, ny = NULL)
+```
 
 ::: {.callout-tip}
 ## Set yourself up for success 
