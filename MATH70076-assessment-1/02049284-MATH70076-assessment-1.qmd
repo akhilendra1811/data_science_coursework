@@ -11,7 +11,12 @@ format:
 format-links: false
 bibliography: example.bib 
 ---
+```{r}
+#| echo: false
+library(ggplot2)
+library(dplyr)
 
+```
 **Deadline:  Friday 10 October 2025 at 13:00.**
 
 _For this assessment you should submit two files via the Imperial College VLE on Blackboard by the deadline stated above. Your files should be named as follows:_
@@ -84,7 +89,7 @@ Does your answer contain:
 
 <!-- YOUR DERIVATION GOES HERE -->
  
-To invert the cumulative distribution function, $F^{-1}_X: [0,1] \rightarrow [u, x^+]$, we will start from @eq-gpd-cdf. There are 2 cases to consider. Firstly when $\xi \neq 0$ but $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$.Solving for when this happens. As $x \geq u$, if $\xi >0$, this is always the case. But even when $\xi < 0$, we can get a positive value for  $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. This happens if (keeping in mind that $\xi < 0 \implies -\xi > 0$): 
+To invert the cumulative distribution function of the GPD, to get $F^{-1}_X: [0,1] \rightarrow [u, x^+]$, we will start from @eq-gpd-cdf. There are 2 cases. Firstly when $\xi \neq 0$ but $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. Solving for when this happens. As $x \geq u$, if $\xi >0$, this is always the case. But even when $\xi < 0$, we can get a positive value for  $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. This happens if (keeping in mind that $\xi < 0 \implies -\xi > 0$): 
 
 $$
 \begin{aligned}
@@ -96,23 +101,23 @@ $$
 $${#eq-cond-neg-xi}
 
 
-This coincides with the range of the Inverse function. Hence we can safely proceed to the 2 cases.
+This coincides with the range of the Inverse function mentioned. Hence we can safely proceed to the 2 cases.
 
-**Case 1)** In  @eq-gpd-cdf, when $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. As we can see from above, this happens when $i) \xi >0$ or $ii)$ from @eq-cond-neg-xi when $u -\dfrac{\sigma}{\xi} > x$. 
+**Case 1)** In  @eq-gpd-cdf, when $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. As we can see from above, this happens when $\quad i) \xi >0$ or $\quad ii)$ from @eq-cond-neg-xi when $u -\dfrac{\sigma}{\xi} > x$.  Let $y = F(x;\,\sigma,\xi, u)$
 
 
 $$
 \begin{aligned}
  y &= 1 - \left(1 + \dfrac{\xi (x-u)}{\sigma}\right)^{-1/\xi}\\
  1-y &= \left(1 + \dfrac{\xi (x-u)}{\sigma}\right)^{-1/\xi}\\
- (1-y)^{-\xi} &= \left(1 + \dfrac{\xi (x-u)}{\sigma}\right) \\
+ (1-y)^{-\xi} &= 1 + \dfrac{\xi (x-u)}{\sigma} \\
  - \dfrac{\xi (x-u)}{\sigma} &= 1 - (1-y)^{-\xi} \\
  x-u &= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi})\\
  x&= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u \\
- F^{-1}_X(y) &= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u
+ \implies F^{-1}_X(y) &= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u
  \end{aligned}
 $${#eq-gpd-inverse-cdf-case-1}
-**Case 2)** when $\xi = 0$, we get the following from @eq-gpd-cdf
+**Case 2)** when $\xi = 0$, we get the following from @eq-gpd-cdf, like above let $y = F(x;\,\sigma,\xi, u)$
 
 $$
 \begin{aligned}
@@ -120,7 +125,8 @@ y &= 1 - \exp\!\left(-\dfrac{x-u}{\sigma}\right)\\
 1 - y &= \exp\!\left(-\dfrac{x-u}{\sigma}\right)\\
 ln(1-y) &= -\dfrac{x-u}{\sigma}\\
 -(x-u) &= \sigma ln(1-y)\\
-F^{-1}_X(y) &= -\sigma ln(1-y) + u
+x &= -\sigma ln(1-y) + u\\
+\implies F^{-1}_X(y) &= -\sigma ln(1-y) + u
 \end{aligned}
 $${#eq-gpd-inverse-cdf-case-2}
 
@@ -169,34 +175,40 @@ Does your answer:
 #' @export
 #'
 #' @examples
-qgpd <- function(p, xi, sigma, u){
 
+
+
+
+qgpd <- function(p, xi, sigma, u) {
+  # chekcing all the parameters are numeric
+  if (!is.numeric(p)) stop("Argument 'p' must be numeric.")
+  if (!is.numeric(xi)) stop("Argument 'xi' must be numeric.")
+  if (!is.numeric(sigma)) stop("Argument 'sigma' must be numeric.")
+  if (!is.numeric(u)) stop("Argument 'u' must be numeric.")
+  
   # Check for valid scale parameter.
   if (any(sigma <= 0)) {
     stop("The scale parameter 'sigma' must be positive.")
   }
   
-  if (any(p <= 0)) {
-    stop("The scale parameter 'sigma' must be positive.")
-  }
-  
-   # Add validation for the probability 'p'
-  if (any(p < 0 | p > 1)) {
-    stop("Probabilities 'p' must be between 0 and 1 (inclusive).")
-  }
 
+   # Add validation for the probability 'p'
+  if (any(p < 0) || any(p > 1)) {
+    stop("Probabilities 'p' must be between 0 and 1.")
+  }
   
   # the two cases for the shape parameter `xi`.
-  # `ifelse` will test `xi == 0` for each element and pick the appropriate formula.
-  q <- ifelse(
-    xi == 0,
-    # Formula for xi = 0 
-    u - sigma * log(1 - p),
-    # Formula for xi != 0 
-    u - (sigma / xi) * (1 - (1 - p)**(-xi) )
-  )
   
-  return(q)
+  # `ifelse` will test `xi == 0` for each element and pick the appropriate formula.
+  
+   return (ifelse(
+    xi == 0,
+    # Formula for xi = 0
+    u - sigma * log(1 - p),
+    # Formula for xi != 0
+    u - (sigma / xi) * (1 - (1 - p) ** (-xi))
+    ))
+
 }
 
 # Calculate quantiles for X ~ GPD(u=1.5, sigma=2, xi=-0.4)
@@ -241,36 +253,37 @@ Does your solution contain:
 <!-- YOUR ANSWER GOES HERE --> 
 
 
+
 ```{r}
+#| label: fig-gpd
 #| echo: false
 #| warning: false
+#| fig-cap: "Q–Q Plots for GPD Samples: Stated vs. Simulated Parameters"
+#| layout-ncol: 2
+#| fig-subcap: ["Set a", "Set b", "Set c", "Set d", "Set e", "Set f"]
 
 samples <- read.csv("gpd_samples.csv")
 params <- read.csv("gpd_parameters.csv")
 
-# Set up a 3x2 grid to display all plots in a single figure.
-par(mfrow = c(3, 2), mar = c(4, 4, 3, 2), oma = c(0, 0, 2, 0))
+plots <- list()
 
-# Get the unique set IDs to loop through.
+# Get the unique set IDs to loop through
 set_ids <- unique(params$id)
 
-# Loop through each dataset ID (a, b, c, d, e, f).
 for (current_id in set_ids) {
-# get the data for the current set_id
   sample_data <- samples$value[samples$set_id == current_id]
   sample_data <- sort(sample_data)
-#  get the stated parameters for the current set
   stated_params <- params[params$id == current_id, ]
   
-   n <- length(sample_data)
-   
-# create a set of evenly spaced probabilities for the theoretical distribution.
-theoretical_probs <- (1:n - 0.5) / n
-
-# initialize an empty vector to store the results.
-  theoretical_quantiles <- numeric(n)
+  n <- length(sample_data)
+  # create a set of evenly spaced probabilities for the theoretical distribution
+  theoretical_probs <- (1:n - 0.5) / n
   
-# use qgpd function to find the corresponding theoretical quantiles.
+  #initialize an empty vector to store the results
+  theoretical_quantiles <- numeric(n)
+
+  # use qgpd function to find the corresponding theoretical quantiles
+  # Using for loops, could use vectorisation, but this helps me be in control
   for (i in 1:n) {
     theoretical_quantiles[i] <- qgpd(
       p = theoretical_probs[i], 
@@ -280,24 +293,43 @@ theoretical_probs <- (1:n - 0.5) / n
     )
   }
   
-  plot(
-    theoretical_quantiles,
-    sample_data,
-    main = paste0("Q-Q Plot for Set '", current_id, "' (n=", n, ")"),
-    xlab = "Theoretical Quantiles",
-    ylab = "Empirical (Sample) Quantiles",
-    pch = 19, # Use solid circles for points
-    col = "blue"
+# use qgpd function to find the corresponding theoretical quantiles for sim
+  theoretical_quantiles_sim <- numeric(n)
+  for (i in 1:n) {
+    theoretical_quantiles_sim[i] <- qgpd(
+      p = theoretical_probs[i], 
+      xi = stated_params$xi_sim,
+      sigma = stated_params$sig_sim,
+      u = stated_params$u_sim
+    )
+  }
+  
+  df <- data.frame(
+    Empirical = sample_data,
+    Theoretical = theoretical_quantiles,
+    Simulated = theoretical_quantiles_sim
   )
-  # Add the y=x reference line.
-  abline(0, 1, col = "red", lwd = 2)
-  grid()
+  
+  p <- ggplot(df) +
+    geom_point(aes(x = Theoretical, y = Empirical, color = "Stated Params"), alpha = 0.8) +
+    geom_point(aes(x = Simulated, y = Empirical, color = "Sim Params"), alpha = 0.5) +
+    geom_abline(intercept = 0, slope = 1, color = "green", size = 1) +
+    labs(
+      title = paste0("Q-Q Plot for Set '", current_id, "' (n=", n, ")"),
+      x = "Theoretical Quantiles",
+      y = "Empirical (Sample) Quantiles",
+      color = ""
+    ) +
+    theme_minimal() +
+    scale_color_manual(values = c("Stated Params" = "blue", "Sim Params" = "red"))
+  
+  plots[[current_id]] <- p
 }
 
-# Add an overall title to the figure.
-mtext("Q-Q Plots for GPD Samples vs. Stated Parameters", outer = TRUE, cex = 1.5)
-
+plots[[1]]; plots[[2]]; plots[[3]]; plots[[4]]; plots[[5]]; plots[[6]]
 ```
+
+
 
 
 ### Question 4
@@ -434,7 +466,7 @@ grid(nx = NA, ny = NULL)
 
 
 **Proposal 2: **
-
+Considering the riverflow values of those only above 75 and then subtracting $75$ from it because our location parameter is given to be 0, which usually is defined by the minimum value in the distribution. and so we are trying to model the excess above 75.
 ```{r}
 #| echo: false
 threshold <- 75
@@ -447,10 +479,10 @@ proposal_2_data <- river_data[river_data$flow > threshold, ]
 #| label: fig-gpd-qqplot-q4
 #| echo: false
 #| warning: false
-#| fig-cap: "Q-Q plot of river flow exceedances vs. theoretical GPD"
+#| fig-cap: "Q-Q plot of river flow vs. theoretical GPD"
 
 # Get the empirical quantiles by sorting the  data
-empirical_quantiles <- sort(proposal_2_data$flow)
+empirical_quantiles <- sort(proposal_2_data$flow - 75) 
 
 # Define the hydrologist's proposed parameters
 gpd_params <- list(sigma = 29.7, xi = 0.62, u = 0)
@@ -469,31 +501,36 @@ for (i in 1:n) {
   )
 }
 
-# d. Create the plot.
-plot(
-  theoretical_quantiles,
-  empirical_quantiles,
-  main = expression(paste("Q-Q Plot for River Flow in excess of 75 cm"^3)),
-  xlab = "Theoretical GPD Quantiles",
-  ylab = "Empirical (Sample) Quantiles",
-  pch = 19,
-  col = "darkred"
+qq_data <- data.frame(
+  Theoretical = theoretical_quantiles,
+  Empirical = empirical_quantiles
 )
-abline(0, 1, col = "black", lwd = 2, lty = 2) # Add y=x reference line
-grid()
+
+ggplot(qq_data, aes(x = Theoretical, y = Empirical)) +
+  geom_point(color = "darkred") +
+  geom_abline(slope = 1, intercept = 0, color = "black", linetype = "dashed", linewidth = 1) +
+  ggtitle(expression(paste("Q-Q Plot for River Flow in excess of 75 cm"^3))) +
+  xlab("Theoretical GPD Quantiles") +
+  ylab("Empirical (Sample) Quantiles") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.grid = element_line(color = "grey")
+  )
 
 ```
 ```{r}
 #| label: fig-acf-q4
 #| echo: false
 #| warning: false
-#| fig-cap: "Autocorrelation of Extreme Flow Exceedances"
+#| fig-cap: "Autocorrelation of Extreme Flow"
 acf(
   proposal_2_data$flow,
   lag.max = 30
 )
 
 ```
+
 
 ::: {.callout-tip}
 ## Set yourself up for success 
