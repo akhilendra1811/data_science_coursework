@@ -166,17 +166,15 @@ Does your answer:
 ```{r}
 #' Title
 #'
-#' @param p 
-#' @param xi 
-#' @param sigma 
-#' @param u 
+#' @param p  probability, should be between 0 and 1 (inclusive)
+#' @param xi shape parameter, should be a real number
+#' @param sigma scale parameter, should be positive
+#' @param u location parameter, should be a real number
 #'
-#' @returns
+#' @returns a vector/ numeric quantile (or inverse cumulative distribution) corresponding to the probability p corresponding to the generalized pareto distribution with the given parameters
 #' @export
 #'
 #' @examples
-
-
 
 
 qgpd <- function(p, xi, sigma, u) {
@@ -221,6 +219,7 @@ quantile_p75 <- qgpd(p = 0.75, u = 1.5, sigma = 2, xi = -0.4)
 # Quantile for p = 0.99
 quantile_p99 <- qgpd(p = 0.99, u = 1.5, sigma = 2, xi = -0.4)
 
+
 cat(
   "The quantile for p = 0.50 is:", quantile_p05, "\n",
   "The quantile for p = 0.75 is:", quantile_p75, "\n",
@@ -255,10 +254,10 @@ Does your solution contain:
 
 
 ```{r}
-#| label: fig-gpd
+#| label: fig-gpd-qq
 #| echo: false
 #| warning: false
-#| fig-cap: "Q–Q Plots for GPD Samples: Stated vs. Simulated Parameters"
+#| fig-cap: "Q–Q Plots for GPD Samples: Non_sim vs. sim Parameters"
 #| layout-ncol: 2
 #| fig-subcap: ["Set a", "Set b", "Set c", "Set d", "Set e", "Set f"]
 
@@ -283,7 +282,7 @@ for (current_id in set_ids) {
   theoretical_quantiles <- numeric(n)
 
   # use qgpd function to find the corresponding theoretical quantiles
-  # Using for loops, could use vectorisation, but this helps me be in control
+  # Using for loop, could use vectorisation, but this helps me be in control
   for (i in 1:n) {
     theoretical_quantiles[i] <- qgpd(
       p = theoretical_probs[i], 
@@ -311,17 +310,17 @@ for (current_id in set_ids) {
   )
   
   p <- ggplot(df) +
-    geom_point(aes(x = Theoretical, y = Empirical, color = "Stated Params"), alpha = 0.8) +
+    geom_point(aes(x = Theoretical, y = Empirical, color = "Non_sim Params"), alpha = 0.8) +
     geom_point(aes(x = Simulated, y = Empirical, color = "Sim Params"), alpha = 0.5) +
     geom_abline(intercept = 0, slope = 1, color = "green", size = 1) +
     labs(
       title = paste0("Q-Q Plot for Set '", current_id, "' (n=", n, ")"),
       x = "Theoretical Quantiles",
-      y = "Empirical (Sample) Quantiles",
+      y = "Empirical Quantiles",
       color = ""
     ) +
     theme_minimal() +
-    scale_color_manual(values = c("Stated Params" = "blue", "Sim Params" = "red"))
+    scale_color_manual(values = c("Non_sim Params" = "blue", "Sim Params" = "red"))
   
   plots[[current_id]] <- p
 }
@@ -329,6 +328,19 @@ for (current_id in set_ids) {
 plots[[1]]; plots[[2]]; plots[[3]]; plots[[4]]; plots[[5]]; plots[[6]]
 ```
 
+In @fig-gpd-qq, six different quantile-quantile (Q-Q) plots are shown, corresponding to sets `(a)`, `(b)`, ... `(f)`. Each plot compares empirical quantiles from the data in `gpd_samples.csv` against theoretical quantiles from a Generalized Pareto Distribution (GPD). Two parameter sets are used from the file `gpd_parameters.csv` : the simulated parameters (red dots) and the stated/ non_sim parameters (blue dots).
+
+
+In @fig-gpd-qq-1, the points corresponding to the sim parameter lie close to the line $y = x$, indicating good agreement between the empirical and theoretical quantiles. In contrast, the points corresponding to the non_sim/ stated parameter deviate substantially from the line. This graphical evidence allows us to conclude with a high level of confidence that the stated parameters are incorrect and were not used to generate the simulated data. (as stated in the question itself). 
+
+On first glance, we can observe that for set `(b)` @fig-gpd-qq-2, both the non-sim and sim parameter points lie very close to the line $y = x$. As the points are all very close to the line and only deviate a little on top as well as the sample size is fairly large, we can say with high confidence that the stated parameters are likely the true parameters used to generate the simulated data.
+A similar argument can be made for @fig-gpd-qq-6, which relates to the data from set `(f)`.
+
+Like sets `(b)` and `(f)`, @fig-gpd-qq-3, shows that sim and non_sim points coincide and lie close to the line $y =x$. However, there are a few deviations, despite the small sample size ($n =20$). 
+
+In @fig-gpd-qq-4, for `(d)` the simulated and non-simulated points lie close to each other but both deviate significantly from the line $y = x$, where the points would ideally fall. Since we are told that the simulated parameters were used to generate the data, this deviation is likely due to randomness or sampling variability. However, based on the Q–Q plots alone, we cannot confidently determine whether the simulated or non-simulated parameters were used to generate the data.
+
+In @fig-gpd-qq-5, for set `(e)` the simulated and non-simulated points lie far away from each other and both deviate significantly from the line $y = x$. The non_sim parameters appear to be closer to the line than the sim parameters. Similar to our conclusion for set `(d)`, based on the Q–Q plots alone, we cannot confidently determine whether the simulated or non-simulated parameters were used to generate the data.
 
 
 
@@ -390,7 +402,8 @@ plot(
 )
 grid()
 ```
-However, in the csv file, we can see there are some extreme data, so first checking that the number of extreme values are almost equal per year so that we are not adding bias to our investigation.
+
+However, in the csv file, we can see there are some extreme data (given from the column `is_extreme`), so first checking that the number of extreme values are almost equal per year so that we are not adding bias to our investigation.
 
 ```{r}
 #| label: fig-yearly-extremes
@@ -417,6 +430,7 @@ barplot(
 )
 grid(nx = NA, ny = NULL)
 ```
+
 As we can see from @fig-yearly-extremes that the number of extremes is almost similar so we can only consider non-extreme data.
 
 
@@ -424,7 +438,7 @@ As we can see from @fig-yearly-extremes that the number of extremes is almost si
 #| label: fig-riverflow-non-extreme
 #| echo: false
 #| warning: false
-#| fig-cap: "Time series of non-extreme daily river flow "
+#| fig-cap: "Time series of non-extreme daily river flow along with baseline mean"
 
 # Create a subset of the data containing only the non-extreme flows.
 non_extreme_data <- river_data[river_data$is_extreme == "False", ]
@@ -436,13 +450,33 @@ plot(
   type = 'l', # 'l' for line plot
   col = "seagreen",
   main = "Non-Extreme River Flow (2015-2024)",
-  xlab = "Date",
+  xlab = "Year",
   ylab = expression("Flow (m"^3*"/s)")
 )
+lines(
+  non_extreme_data$date,
+  non_extreme_data$baseline_mean,
+  col = "darkred",
+  lwd = 2,
+  lty = 2
+)
 grid()
+legend(
+  "topright",
+  legend = c("River Flow", "Baseline Mean"),
+  col = c("seagreen", "darkred"),
+  lwd = c(1, 2),
+  lty = c(1, 2),
+  bty = "n"
+)
 ```
 
-@fig-riverflow-non-extreme clearly reveals a strong seasonal pattern. The data exhibits cyclical peaks and troughs that recur annually, which is characteristic of hydrological time series influenced by seasonal weather patterns. This directly contradicts the proposal that the distribution of river flow is constant over time. We will also look at boxplots by months to further our reasoning. 
+Figure @fig-riverflow-non-extreme clearly reveals a strong seasonal pattern. The data exhibits cyclical peaks and troughs that recur annually, suggesting that river flow is influenced by seasonal weather patterns. This directly contradicts the proposal that the distribution of river flow remains constant over time. The dotted red line represents the provided `baseline_mean`, which also shows a distinct seasonal trend and a slight upward drift over the years, further contradicting the hydrologist’s proposal. In conclusion, the river flow is not constant over time, it exhibits a clear seasonal trend, and the mean appears to be gradually increasing. This indicates that both the variability and the average level of river flow change over time.
+
+
+
+
+We will also look at boxplots by months to further our reasoning. 
 
 ```{r}
 #| label: fig-monthly-boxplot
