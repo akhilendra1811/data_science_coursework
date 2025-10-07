@@ -103,7 +103,7 @@ $${#eq-cond-neg-xi}
 
 This coincides with the range of the Inverse function mentioned. Hence we can safely proceed to the 2 cases.
 
-**Case 1)** In  @eq-gpd-cdf, when $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. As we can see from above, this happens when $\quad i) \xi >0$ or $\quad ii)$ from @eq-cond-neg-xi when $u -\dfrac{\sigma}{\xi} > x$.  Let $y = F(x;\,\sigma,\xi, u)$
+**Case 1)** In  @eq-gpd-cdf, when $\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0$. As we can see from above, this happens when $\quad i) \xi >0$ or $\quad ii)$ from @eq-cond-neg-xi when $u -\dfrac{\sigma}{\xi} > x$.  Let $y = F(x;\,\sigma,\xi, u)$ then
 
 
 $$
@@ -117,7 +117,7 @@ $$
  \implies F^{-1}_X(y) &= -\dfrac{\sigma}{\xi}(1 - (1-y)^{-\xi}) + u
  \end{aligned}
 $${#eq-gpd-inverse-cdf-case-1}
-**Case 2)** when $\xi = 0$, we get the following from @eq-gpd-cdf, like above let $y = F(x;\,\sigma,\xi, u)$
+**Case 2)** when $\xi = 0$, we get the following from @eq-gpd-cdf, like above let $y = F(x;\,\sigma,\xi, u)$ then
 
 $$
 \begin{aligned}
@@ -164,18 +164,22 @@ Does your answer:
 :::
 
 ```{r}
-#' Title
+#' Quantile Function for the Generalized Pareto Distribution (GPD)
 #'
-#' @param p  probability, should be between 0 and 1 (inclusive)
-#' @param xi shape parameter, should be a real number
-#' @param sigma scale parameter, should be positive
-#' @param u location parameter, should be a real number
+#' Computes the quantile (inverse cumulative distribution) for a Generalized Pareto
 #'
-#' @returns a vector/ numeric quantile (or inverse cumulative distribution) corresponding to the probability p corresponding to the generalized pareto distribution with the given parameters
+#' @param p  Numeric vector of probabilities, should be between 0 and 1 (inclusive)
+#' @param xi Numeric, shape parameter
+#' @param sigma Positive numeric, scale parameter
+#' @param u Numeric, location parameter
+#'
+#' @returns Numeric vector quantile (or inverse cumulative distribution) corresponding to the probability p
 #' @export
 #'
 #' @examples
-
+#' # Quantiles for X ~ GPD(u = 1.5, sigma = 2, xi = -0.4)
+#' qgpd(p = 0.5, xi = -0.4, sigma = 2, u = 1.5)
+#' qgpd(p = c(0.25, 0.75, 0.99), xi = -0.4, sigma = 2, u = 1.5)
 
 qgpd <- function(p, xi, sigma, u) {
   # chekcing all the parameters are numeric
@@ -471,12 +475,7 @@ legend(
 )
 ```
 
-Figure @fig-riverflow-non-extreme clearly reveals a strong seasonal pattern. The data exhibits cyclical peaks and troughs that recur annually, suggesting that river flow is influenced by seasonal weather patterns. This directly contradicts the proposal that the distribution of river flow remains constant over time. The dotted red line represents the provided `baseline_mean`, which also shows a distinct seasonal trend and a slight upward drift over the years, further contradicting the hydrologist’s proposal. In conclusion, the river flow is not constant over time, it exhibits a clear seasonal trend, and the mean appears to be gradually increasing. This indicates that both the variability and the average level of river flow change over time.
 
-
-
-
-We will also look at boxplots by months to further our reasoning. 
 
 ```{r}
 #| label: fig-monthly-boxplot
@@ -497,14 +496,17 @@ boxplot(
 grid(nx = NA, ny = NULL)
 ```
 
+@fig-riverflow-non-extreme clearly reveals a strong seasonal pattern. The data exhibits cyclical peaks and troughs that recur annually, suggesting that river flow is influenced by seasonal weather patterns. This directly contradicts the proposal that the distribution of river flow remains constant over time. The dotted red line represents the provided `baseline_mean`, which also shows a distinct seasonal trend and a slight upward drift over the years, further contradicting the hydrologist’s proposal. @fig-monthly-boxplot supports our counterargument that there is variation of the means of the river flow per month, as we can see from the boxplots that the means of river flow per months are not the same and there are two peaks per year (in May and a smaller one in November).In conclusion, the river flow is not constant over time, it exhibits a clear seasonal trend, and the mean appears to be gradually increasing. This indicates that both the variability and the average level of river flow change over time.
 
 
 **Proposal 2: **
-Considering the riverflow values of those only above 75 and then subtracting $75$ from it because our location parameter is given to be 0, which usually is defined by the minimum value in the distribution. and so we are trying to model the excess above 75.
+Considering the riverflow values of those only above 75 and then subtracting $75$ from it because our location parameter is given to be 0, which usually is defined by the minimum value in the distribution. and so we are trying to model how much the river flow exceeded $75$.
+
 ```{r}
 #| echo: false
 threshold <- 75
 proposal_2_data <- river_data[river_data$flow > threshold, ]
+proposal_2_data$flow <- proposal_2_data$flow - 75
 ```
 
 
@@ -514,9 +516,11 @@ proposal_2_data <- river_data[river_data$flow > threshold, ]
 #| echo: false
 #| warning: false
 #| fig-cap: "Q-Q plot of river flow vs. theoretical GPD"
+#| fig-width: 5
+#| fig-height: 5
 
 # Get the empirical quantiles by sorting the  data
-empirical_quantiles <- sort(proposal_2_data$flow - 75) 
+empirical_quantiles <- sort(proposal_2_data$flow) 
 
 # Define the hydrologist's proposed parameters
 gpd_params <- list(sigma = 29.7, xi = 0.62, u = 0)
@@ -553,18 +557,65 @@ ggplot(qq_data, aes(x = Theoretical, y = Empirical)) +
   )
 
 ```
-```{r}
-#| label: fig-acf-q4
-#| echo: false
-#| warning: false
-#| fig-cap: "Autocorrelation of Extreme Flow"
-acf(
-  proposal_2_data$flow,
-  lag.max = 30
-)
 
+
+
+
+```{r}
+#| warning: false
+#| echo: false
+#| fig-cap: empirical data histogram and theoretical pdf for river flow in excess of 75
+#| label: fig-gpd-emp-hist-pdf
+
+# function for the density of gpd
+
+dGPD <- function(x, sigma, xi, u) {
+  if (sigma <= 0) stop("sigma must be positive")
+
+  # For xi ≠ 0
+  if (xi != 0) {
+    y <- 1 + (xi * (x - u)) / sigma
+    y[y < 0] <- 0  # the max condition
+    pdf <- (1 / sigma) * (y)^(-1/xi - 1)
+    pdf[y <= 0] <- 0  
+  } else {
+    # For xi = 0 
+    pdf <- (1 / sigma) * exp(-(x - u) / sigma)
+    pdf[x < u] <- 0 
+  }
+
+  return(pdf)
+}
+
+
+# Extract the flow vector
+x_empirical <- proposal_2_data$flow
+
+# Plot histogram of empirical data 
+hist(x_empirical,
+     breaks = 30,
+     freq = FALSE,          
+     col = "skyblue",
+     border = "white",
+     main = "Empirical Data vs Theoretical GPD PDF",
+     xlab = "Flow")
+
+# Overlay theoretical GPD PDF
+x_vals <- seq(min(x_empirical), max(x_empirical), length.out = 300)
+lines(x_vals, dGPD(x_vals, sigma = 29.7, xi = 0.62, u = 0),
+      col = "red", lwd = 2)
+
+legend("topright",
+       legend = c("Empirical Density", "Theoretical GPD PDF"),
+       col = c("skyblue", "red"),
+       lwd = c(10, 2),
+       bty = "n")
 ```
 
+
+Like we did in task 3, we are using Q-Q plot, in @fig-gpd-qqplot-q4, to assist with telling whether observed data matches the theoretical distribution. As mentioned earlier, we are only working with the values over 75, and then subtracting 75 from them. The data points in @fig-gpd-qqplot-q4, lie very close to the line $y= x$, which shows that the excess river flow values agree with the theoretical GPD distribution suggested by the hydrologist. However, a few points in the upper tail deviate above the line, they are more extreme than the theoretical model than expected. In @fig-gpd-emp-hist-pdf, a histogram of the empirical exceedances was plotted along with the theoretical GPD probability density function. The histogram is heavily right skewed with alot of value close to zero. The histogram also shows a long upper tail. The theoretical GPD pdf matches the shape of the histogram fairly closely. It does a good job of matching the right skew as well as the long upper tail.
+
+Overall, the two figures, @fig-gpd-qqplot-q4 and @fig-gpd-emp-hist-pdf, provide a good argument to support the hydrologist's proposal that for river flows exceeding 75 cumecs, it is appropriate to model the data as independent and identically distributed GPD($\sigma =29.7$, $\xi=0.62$, $u = 0$).
 
 ::: {.callout-tip}
 ## Set yourself up for success 
