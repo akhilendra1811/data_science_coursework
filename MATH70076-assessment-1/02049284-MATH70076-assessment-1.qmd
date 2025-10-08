@@ -9,7 +9,7 @@ format:
     self-contained: true
   pdf: default
 format-links: false
-bibliography: example.bib 
+bibliography: 02049284-MATH70076-assessment-1.bib 
 ---
 ```{r}
 #| echo: false
