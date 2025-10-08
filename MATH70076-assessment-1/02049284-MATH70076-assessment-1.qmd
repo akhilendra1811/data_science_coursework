@@ -375,7 +375,7 @@ Does your answer contain:
 
 <!-- YOUR INVESTIGATION GOES HERE --> 
 
-**Proposal 1: ** To investigate Proposal 1 "the distribution of river flow values is constant over time", we will first create a time series plot to see the riverflow.
+**Proposal 1: ** To investigate Proposal 1 "the distribution of river flow values is constant over time", we will first create a time series plot to see the trend of riverflow.
 
 ```{r}
 #| echo: false
@@ -435,8 +435,7 @@ barplot(
 grid(nx = NA, ny = NULL)
 ```
 
-As we can see from @fig-yearly-extremes that the number of extremes is almost similar so we can only consider non-extreme data.
-
+As we can see from @fig-yearly-extremes that the number of extremes is almost similar so we can only consider non-extreme data. Now we will plot the non-extreme river flow data along with the baseline means, to see if there are any trends. And secondly, we will plot monthly box plots which will also contain only the non-extreme data, this will also help us visualise if there are any trends. 
 
 ```{r}
 #| label: fig-riverflow-non-extreme
@@ -500,7 +499,7 @@ grid(nx = NA, ny = NULL)
 
 
 **Proposal 2: **
-Considering the riverflow values of those only above 75 and then subtracting $75$ from it because our location parameter is given to be 0, which usually is defined by the minimum value in the distribution. and so we are trying to model how much the river flow exceeded $75$.
+Considering the riverflow values of those above 75 cumecs and then subtracting $75$ from it because our location parameter is given to be 0, which usually is defined by the minimum value in the distribution. And so we are trying to model how much the river flow exceeded $75$. To investigate this proposal, we will plot a Q-Q plot as well as a normalised histogram of the data with the theoretical pdf. These two plots will help us graphically determine if the riverflow in excess of 75 cumecs can be modeled using the GPD defined.
 
 ```{r}
 #| echo: false
@@ -615,7 +614,7 @@ legend("topright",
 
 Like we did in task 3, we are using Q-Q plot, in @fig-gpd-qqplot-q4, to assist with telling whether observed data matches the theoretical distribution. As mentioned earlier, we are only working with the values over 75, and then subtracting 75 from them. The data points in @fig-gpd-qqplot-q4, lie very close to the line $y= x$, which shows that the excess river flow values agree with the theoretical GPD distribution suggested by the hydrologist. However, a few points in the upper tail deviate above the line, they are more extreme than the theoretical model than expected. In @fig-gpd-emp-hist-pdf, a histogram of the empirical exceedances was plotted along with the theoretical GPD probability density function. The histogram is heavily right skewed with alot of value close to zero. The histogram also shows a long upper tail. The theoretical GPD pdf matches the shape of the histogram fairly closely. It does a good job of matching the right skew as well as the long upper tail.
 
-Overall, the two figures, @fig-gpd-qqplot-q4 and @fig-gpd-emp-hist-pdf, provide a good argument to support the hydrologist's proposal that for river flows exceeding 75 cumecs, it is appropriate to model the data as independent and identically distributed GPD($\sigma =29.7$, $\xi=0.62$, $u = 0$).
+Overall, the two figures, @fig-gpd-qqplot-q4 and @fig-gpd-emp-hist-pdf, provide a good argument to support the hydrologist's proposal that for river flows exceeding 75 cumecs, it is appropriate to model the data as GPD($\sigma =29.7$, $\xi=0.62$, $u = 0$). (We have not explicitly tested for the Independent and identically distributed part of the proposal).
 
 ::: {.callout-tip}
 ## Set yourself up for success 
